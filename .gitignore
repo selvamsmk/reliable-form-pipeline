@@ -1,0 +1,17 @@
+.DS_Store
+node_modules/
+bun.lockb
+dist/
+build/
+.turbo/
+.cache/
+.env
+.env.*.local
+.vscode/
+.idea/
+*.log
+coverage/
+/.pnp.cjs
+pnpm-lock.yaml
+yarn.lock
+/npm-debug.log*

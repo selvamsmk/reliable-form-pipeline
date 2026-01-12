@@ -1,0 +1,17 @@
+{
+  "name": "reliable-form-pipeline",
+  "private": true,
+  "packageManager": "bun@1.0.0",
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
+  "scripts": {
+    "dev": "turbo run dev",
+    "build": "turbo run build",
+    "start": "turbo run start"
+  },
+  "devDependencies": {
+    "turbo": "^1.9.3"
+  }
+}
