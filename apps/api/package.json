@@ -6,5 +6,8 @@
   "scripts": {
     "dev": "bun run src/index.ts",
     "start": "bun run src/index.ts"
+  },
+  "dependencies": {
+    "hono": "^3.0.5"
   }
 }

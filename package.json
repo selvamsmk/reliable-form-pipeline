@@ -12,6 +12,7 @@
     "start": "turbo run start"
   },
   "devDependencies": {
+    "@types/bun": "^1.3.5",
     "turbo": "^1.9.3"
   }
 }
