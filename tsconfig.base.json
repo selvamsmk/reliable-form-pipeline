@@ -12,6 +12,6 @@
     "paths": {
       "@reliable/db": ["packages/db/src"]
     },
-    "types": []
+    "types": ["bun", "node"],
   }
 }

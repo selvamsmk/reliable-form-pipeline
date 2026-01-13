@@ -11,6 +11,7 @@
     "@reliable/db": "workspace:*",
     "@reliable/mailer": "workspace:*",
     "@reliable/queue": "workspace:*",
+    "@reliable/chaos": "workspace:*",
     "hono": "^4.0.0"
   }
 }

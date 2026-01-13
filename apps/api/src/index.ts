@@ -3,6 +3,7 @@ import prisma from '@reliable/db';
 import { generateSubmissionPdf, type Submission as MailerSubmission, sendSubmissionEmail } from '@reliable/mailer';
 import { enqueueSubmission } from '@reliable/queue';
 import type { Submission as DbSubmission, SubmissionStatus as _SubmissionStatus } from '@reliable/db';
+import { ChaosController, type ChaosConfig } from '@reliable/chaos';
 
 type SubmitPayload = {
 	name: string;
@@ -124,6 +125,22 @@ app.post('/submit-reliable', async (c) => {
 		return c.json({ submissionId: created.id, status: 'queued' });
 	} catch (err) {
 		console.error('Error parsing JSON', err);
+		return c.json({ status: 'error', error: 'invalid_json' }, 400);
+	}
+});
+
+app.post('/chaos', async (c) => {
+	try {
+		const json = await c.req.json();
+
+		const patch: Partial<ChaosConfig> = {};
+		if (json && typeof json.pdfDelayMs === 'number') patch.pdfDelayMs = json.pdfDelayMs;
+		if (json && typeof json.dbFailRate === 'number') patch.dbFailRate = json.dbFailRate;
+
+		const updated = ChaosController.updateConfig(patch);
+		return c.json({ status: 'ok', config: updated });
+	} catch (err) {
+		console.error('POST /chaos invalid json', err);
 		return c.json({ status: 'error', error: 'invalid_json' }, 400);
 	}
 });

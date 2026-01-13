@@ -1,3 +1,5 @@
+import { setTimeout as timersSetTimeout } from 'node:timers/promises';
+
 export type ChaosConfig = {
   // milliseconds to delay PDF generation; 0 means no delay
   pdfDelayMs: number;
@@ -28,7 +30,7 @@ class ChaosControllerClass {
   async delayPdf(): Promise<void> {
     const ms = this.config.pdfDelayMs ?? 0;
     if (ms > 0) {
-      await new Promise((res) => setTimeout(res, ms));
+      await timersSetTimeout(ms);
     }
   }
 
