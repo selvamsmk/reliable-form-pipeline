@@ -9,7 +9,8 @@ import type { SubmissionJob } from './types';
 const defaultRedis = process.env.COMPOSE_PROJECT_NAME ? 'redis:6379' : '127.0.0.1:6379';
 const REDIS_URL = process.env.REDIS_URL ?? `redis://${defaultRedis}`;
 
-const connection = new IORedis(REDIS_URL);
+// Ensure `maxRetriesPerRequest` is null so BullMQ blocking commands work
+const connection = new IORedis(REDIS_URL, { maxRetriesPerRequest: null });
 
 export const submissionQueueName = 'submissionQueue';
 

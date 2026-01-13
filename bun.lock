@@ -25,6 +25,13 @@
     "apps/worker": {
       "name": "@reliable/worker",
       "version": "0.1.0",
+      "dependencies": {
+        "@reliable/db": "workspace:*",
+        "@reliable/mailer": "workspace:*",
+        "@reliable/queue": "workspace:*",
+        "bullmq": "^5.0.0",
+        "ioredis": "^5.0.0",
+      },
     },
     "packages/db": {
       "name": "@reliable/db",
