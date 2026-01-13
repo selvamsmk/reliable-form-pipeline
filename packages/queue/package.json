@@ -4,7 +4,9 @@
   "private": true,
   "type": "module",
   "main": "src/index.ts",
-  "scripts": {
-    "build": "echo 'no build'"
+  "types": "src/index.ts",
+  "dependencies": {
+    "bullmq": "^5.0.0",
+    "ioredis": "^5.0.0"
   }
 }
