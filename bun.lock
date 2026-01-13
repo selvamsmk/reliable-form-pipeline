@@ -30,6 +30,7 @@
       "name": "@reliable/worker",
       "version": "0.1.0",
       "dependencies": {
+        "@reliable/chaos": "workspace:*",
         "@reliable/db": "workspace:*",
         "@reliable/mailer": "workspace:*",
         "@reliable/queue": "workspace:*",

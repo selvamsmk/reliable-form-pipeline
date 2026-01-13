@@ -11,6 +11,7 @@
     "@reliable/queue": "workspace:*",
     "@reliable/mailer": "workspace:*",
     "@reliable/db": "workspace:*",
+    "@reliable/chaos": "workspace:*",
     "bullmq": "^5.0.0",
     "ioredis": "^5.0.0"
   }
