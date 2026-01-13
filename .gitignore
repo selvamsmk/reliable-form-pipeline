@@ -1,3 +1,5 @@
+packages/db/src/generated/
+
 .DS_Store
 node_modules/
 bun.lockb

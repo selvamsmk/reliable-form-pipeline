@@ -1,4 +1,5 @@
 import { Hono } from 'hono';
+import prisma from '@reliable/db';
 
 type SubmitPayload = {
 	name: string;
@@ -12,7 +13,6 @@ app.post('/submit', async (c) => {
 	try {
 		const json = await c.req.json();
 
-		// Basic runtime validation
 		const hasFields =
 			json &&
 			typeof json.name === 'string' &&
@@ -26,6 +26,14 @@ app.post('/submit', async (c) => {
 
 		const body = json as SubmitPayload;
 		console.log('POST /submit', body);
+
+		// Persist to Postgres via Prisma client
+		try {
+			await prisma.submission.create({ data: body });
+		} catch (dbErr) {
+			console.error('DB error saving submission', dbErr);
+			return c.json({ status: 'error', error: 'db_error' }, 500);
+		}
 
 		return c.json({ status: 'ok' });
 	} catch (err) {

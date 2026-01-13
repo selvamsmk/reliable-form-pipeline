@@ -1,0 +1,25 @@
+generator client {
+    provider     = "prisma-client"
+    output       = "../../src/generated"
+    moduleFormat = "esm"
+    runtime      = "bun"
+}
+
+datasource db {
+    provider = "postgresql"
+}
+
+enum SubmissionStatus {
+    PENDING
+    COMPLETED
+    FAILED
+}
+
+model Submission {
+    id        String           @id @default(cuid())
+    name      String
+    email     String
+    message   String
+    createdAt DateTime         @default(now())
+    status    SubmissionStatus @default(PENDING)
+}
