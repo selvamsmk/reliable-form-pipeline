@@ -34,6 +34,13 @@ app.post('/submit', async (c) => {
 		// Persist to Postgres via Prisma client
 		let created: DbSubmission;
 		try {
+			// allow chaos to optionally fail DB ops before writing
+			try {
+				ChaosController.maybeFailDb();
+			} catch (chaosErr) {
+				console.error('Chaos triggered DB failure before create', chaosErr);
+				return c.json({ status: 'error', error: 'db_error' }, 500);
+			}
 			created = await prisma.submission.create({ data: body });
 		} catch (dbErr) {
 			console.error('DB error saving submission', dbErr);
@@ -50,10 +57,21 @@ app.post('/submit', async (c) => {
 				createdAt: created.createdAt?.toString?.() ?? new Date().toISOString(),
 			};
 
+			// allow configured PDF delay for chaos testing
+			await ChaosController.delayPdf();
+
 			const pdfBuffer = await generateSubmissionPdf(submissionForPdf as any);
 
 			// Send email with PDF attachment (Mailhog-compatible SMTP assumed at localhost:1025)
 			await sendSubmissionEmail(submissionForPdf, pdfBuffer);
+
+			// Before updating DB allow chaos to optionally fail DB ops
+			try {
+				ChaosController.maybeFailDb();
+			} catch (chaosErr) {
+				console.error('Chaos triggered DB failure before update', chaosErr);
+				return c.json({ status: 'error', error: 'db_update_error' }, 500);
+			}
 
 			// Update DB status to COMPLETED
 			try {
@@ -134,8 +152,24 @@ app.post('/chaos', async (c) => {
 		const json = await c.req.json();
 
 		const patch: Partial<ChaosConfig> = {};
-		if (json && typeof json.pdfDelayMs === 'number') patch.pdfDelayMs = json.pdfDelayMs;
-		if (json && typeof json.dbFailRate === 'number') patch.dbFailRate = json.dbFailRate;
+
+		if (json && json.pdfDelayMs !== undefined) {
+			const raw = json.pdfDelayMs;
+			const parsed = typeof raw === 'number' ? raw : typeof raw === 'string' ? Number(raw) : NaN;
+			if (!Number.isFinite(parsed) || parsed < 0) {
+				return c.json({ status: 'error', error: 'invalid_pdfDelayMs' }, 400);
+			}
+			patch.pdfDelayMs = parsed;
+		}
+
+		if (json && json.dbFailRate !== undefined) {
+			const raw = json.dbFailRate;
+			const parsed = typeof raw === 'number' ? raw : typeof raw === 'string' ? Number(raw) : NaN;
+			if (!Number.isFinite(parsed) || parsed < 0 || parsed > 1) {
+				return c.json({ status: 'error', error: 'invalid_dbFailRate' }, 400);
+			}
+			patch.dbFailRate = parsed;
+		}
 
 		const updated = ChaosController.updateConfig(patch);
 		return c.json({ status: 'ok', config: updated });
