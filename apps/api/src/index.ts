@@ -1,6 +1,7 @@
 import { Hono } from 'hono';
 import prisma from '@reliable/db';
 import { generateSubmissionPdf, type Submission as MailerSubmission, sendSubmissionEmail } from '@reliable/mailer';
+import { enqueueSubmission } from '@reliable/queue';
 import type { Submission as DbSubmission, SubmissionStatus as _SubmissionStatus } from '@reliable/db';
 
 type SubmitPayload = {
@@ -67,6 +68,60 @@ app.post('/submit', async (c) => {
 			console.error('Error during PDF/email/update flow', errSend);
 			return c.json({ status: 'error', error: 'processing_failed' }, 500);
 		}
+	} catch (err) {
+		console.error('Error parsing JSON', err);
+		return c.json({ status: 'error', error: 'invalid_json' }, 400);
+	}
+});
+
+app.post('/submit-reliable', async (c) => {
+	try {
+		const json = await c.req.json();
+
+		const hasFields =
+			json &&
+			typeof json.name === 'string' &&
+			typeof json.email === 'string' &&
+			typeof json.message === 'string';
+
+		if (!hasFields) {
+			console.warn('POST /submit-reliable invalid payload', json);
+			return c.json({ status: 'error', error: 'invalid_payload' }, 400);
+		}
+
+		const body = json as SubmitPayload;
+		console.log('POST /submit-reliable', body);
+
+		// Persist as PENDING
+		let created: DbSubmission;
+		try {
+			created = await prisma.submission.create({ data: { ...body, status: 'PENDING' } });
+		} catch (dbErr) {
+			console.error('DB error saving submission', dbErr);
+			return c.json({ status: 'error', error: 'db_error' }, 500);
+		}
+
+		// Enqueue job
+		try {
+			await enqueueSubmission({
+				id: created.id,
+				name: created.name,
+				email: created.email,
+				message: created.message,
+				createdAt: created.createdAt?.toString?.() ?? new Date().toISOString(),
+			});
+		} catch (enqueueErr) {
+			console.error('Queue error enqueuing submission', enqueueErr);
+			// mark failed
+			try {
+				await prisma.submission.update({ where: { id: created.id }, data: { status: 'FAILED' } });
+			} catch (uErr) {
+				console.error('DB error marking submission FAILED', uErr);
+			}
+			return c.json({ status: 'error', error: 'enqueue_failed' }, 500);
+		}
+
+		return c.json({ submissionId: created.id, status: 'queued' });
 	} catch (err) {
 		console.error('Error parsing JSON', err);
 		return c.json({ status: 'error', error: 'invalid_json' }, 400);

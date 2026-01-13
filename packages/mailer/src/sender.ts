@@ -2,7 +2,9 @@ import nodemailer from 'nodemailer';
 import type { Submission } from './pdf';
 
 const SMTP_HOST = process.env.MAIL_HOST ?? 'localhost';
-const SMTP_PORT = Number(process.env.MAIL_PORT ?? 1025);
+const rawPort = process.env.MAIL_PORT;
+const SMTP_PORT = rawPort && rawPort.toString().trim() !== '' ? Number(rawPort) : 1025;
+console.log('SMTP_HOST=', SMTP_HOST, 'SMTP_PORT=', SMTP_PORT);
 
 export async function sendSubmissionEmail(sub: Submission, pdfBuffer: Buffer): Promise<void> {
   const transporter = nodemailer.createTransport({

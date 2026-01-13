@@ -15,6 +15,7 @@
       "dependencies": {
         "@reliable/db": "workspace:*",
         "@reliable/mailer": "workspace:*",
+        "@reliable/queue": "workspace:*",
         "hono": "^4.0.0",
       },
     },
