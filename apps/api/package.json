@@ -8,7 +8,8 @@
     "start": "bun run src/index.ts"
   },
   "dependencies": {
-    "hono": "^4.0.0",
-    "@reliable/db": "workspace:*"
+    "@reliable/db": "workspace:*",
+    "@reliable/mailer": "workspace:*",
+    "hono": "^4.0.0"
   }
 }

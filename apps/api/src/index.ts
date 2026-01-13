@@ -1,5 +1,7 @@
 import { Hono } from 'hono';
 import prisma from '@reliable/db';
+import { generateSubmissionPdf, type Submission as MailerSubmission, sendSubmissionEmail } from '@reliable/mailer';
+import type { Submission as DbSubmission, SubmissionStatus as _SubmissionStatus } from '@reliable/db';
 
 type SubmitPayload = {
 	name: string;
@@ -28,14 +30,43 @@ app.post('/submit', async (c) => {
 		console.log('POST /submit', body);
 
 		// Persist to Postgres via Prisma client
+		let created: DbSubmission;
 		try {
-			await prisma.submission.create({ data: body });
+			created = await prisma.submission.create({ data: body });
 		} catch (dbErr) {
 			console.error('DB error saving submission', dbErr);
 			return c.json({ status: 'error', error: 'db_error' }, 500);
 		}
 
-		return c.json({ status: 'ok' });
+		// Generate a PDF from the saved submission, send it via SMTP, and update status
+		try {
+			const submissionForPdf: MailerSubmission = {
+				id: created.id,
+				name: created.name,
+				email: created.email,
+				message: created.message,
+				createdAt: created.createdAt?.toString?.() ?? new Date().toISOString(),
+			};
+
+			const pdfBuffer = await generateSubmissionPdf(submissionForPdf as any);
+
+			// Send email with PDF attachment (Mailhog-compatible SMTP assumed at localhost:1025)
+			await sendSubmissionEmail(submissionForPdf, pdfBuffer);
+
+			// Update DB status to COMPLETED
+			try {
+				await prisma.submission.update({ where: { id: created.id }, data: { status: 'COMPLETED' } });
+			} catch (updateErr) {
+				console.error('DB error updating submission status', updateErr);
+				return c.json({ status: 'error', error: 'db_update_error' }, 500);
+			}
+
+			// Return submission id only
+			return c.json({ status: 'ok', id: created.id });
+		} catch (errSend) {
+			console.error('Error during PDF/email/update flow', errSend);
+			return c.json({ status: 'error', error: 'processing_failed' }, 500);
+		}
 	} catch (err) {
 		console.error('Error parsing JSON', err);
 		return c.json({ status: 'error', error: 'invalid_json' }, 400);

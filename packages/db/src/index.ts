@@ -11,3 +11,6 @@ const prisma = new PrismaClient({ adapter });
 
 export { adapter };
 export default prisma;
+
+// Re-export types from generated client for other packages to import
+export type { Submission, SubmissionStatus } from './generated/client';
